@@ -1,53 +1,46 @@
 pipeline {
-    agent any   // runs on the Jenkins host, which has Docker installed
-
-    environment {
-        IMAGE_NAME = 'my-go-app'
-        IMAGE_TAG  = "${env.BUILD_NUMBER}"
-    }
+    agent any
 
     stages {
-        stage('Checkout') {
+        stage('Build') {
             steps {
-                checkout scm
+                sh 'docker build -f dockerfile.app1 -t my-go-app:${BUILD_NUMBER} -t my-go-app:latest .'
             }
         }
 
-        stage('Build & Test (via Docker)') {
+        stage('Deploy') {
             steps {
-                sh 'docker build -f dockerfile.app1 -t my-go-app:${IMAGE_TAG} .'
-            }
-        }
-        
-        stage('Tag as latest') {
-            steps {
-                sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
-            }
-        }
+                withCredentials([file(credentialsId: 'app1-env-file', variable: 'ENV_FILE')]) {
+                    sh '''
+                        # Stop and remove old container if it exists
+                        docker stop test-api || true
+                        docker rm test-api || true
 
-        // Uncomment once you have a registry to push to (Docker Hub, ECR, GHCR, etc.)
-        /*
-        stage('Push') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    sh 'echo $PASS | docker login -u $USER --password-stdin'
-                    sh 'docker push ${IMAGE_NAME}:${IMAGE_TAG}'
-                    sh 'docker push ${IMAGE_NAME}:latest'
+                        # Run the new one
+                        docker run -d \
+                          --name test-api \
+                          -p 9090:8080 \
+                          --env-file $ENV_FILE \
+                          --restart unless-stopped \
+                          my-go-app:latest
+                    '''
                 }
             }
         }
-        */
+
+        stage('Smoke Test') {
+            steps {
+                sh '''
+                    sleep 5
+                    curl -f http://localhost:9090/health || (docker logs test-api && exit 1)
+                '''
+            }
+        }
     }
 
     post {
-        success {
-            echo "Built ${IMAGE_NAME}:${IMAGE_TAG}"
-        }
         failure {
-            echo 'Pipeline failed — check the stage that broke above.'
-        }
-        always {
-            sh 'docker image prune -f'   // clean up dangling layers so WSL disk doesn't fill up
+            sh 'docker logs test-api || true'
         }
     }
 }
