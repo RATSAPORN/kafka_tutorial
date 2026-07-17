@@ -12,11 +12,14 @@ RUN go mod download
 
 COPY . .
 
+# generate the swagger docs package (github.com/username/myproject/docs)
+RUN go install github.com/swaggo/swag/cmd/swag@v1.16.6
+RUN swag init -g cmd/main.go -o docs
+
 RUN GOOS=linux go build \
     -ldflags="-w -s" \
     -o /app/bin/api \
     ./cmd
-
 # ── Stage 2: Runner ───────────────────────────────────────────
 FROM debian:bookworm-slim AS production   
 RUN apt-get update && apt-get install -y --no-install-recommends \
