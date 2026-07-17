@@ -13,6 +13,13 @@ pipeline {
                         # Compose reads a literal ".env" file for variable substitution
                         cp "$ENV_FILE" .env
 
+                        # Verify .env actually has content (without printing secrets)
+                        echo "--- .env file check ---"
+                        pwd
+                        wc -l .env
+                        grep -c "=" .env || echo "WARNING: no key=value lines found"
+                        cut -d= -f1 .env
+
                         # Build and (re)start just the app1 service
                         docker compose build app1
                         docker compose up -d app1
