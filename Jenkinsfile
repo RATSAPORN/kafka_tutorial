@@ -2,27 +2,20 @@ pipeline {
     agent any
 
     stages {
-        stage('Build') {
-            steps {
-                sh 'docker build -f dockerfile.app1 -t my-go-app:${BUILD_NUMBER} -t my-go-app:latest .'
-            }
-        }
-
         stage('Deploy') {
             steps {
                 withCredentials([file(credentialsId: 'app1-env-file', variable: 'ENV_FILE')]) {
                     sh '''
-                        # Stop and remove old container if it exists
+                        # Clean up any leftover standalone test container from before
                         docker stop test-api || true
                         docker rm test-api || true
 
-                        # Run the new one
-                        docker run -d \
-                          --name test-api \
-                          -p 9090:8080 \
-                          --env-file $ENV_FILE \
-                          --restart unless-stopped \
-                          my-go-app:latest
+                        # Compose reads a literal ".env" file for variable substitution
+                        cp "$ENV_FILE" .env
+
+                        # Build and (re)start just the app1 service
+                        docker compose build app1
+                        docker compose up -d app1
                     '''
                 }
             }
@@ -31,8 +24,8 @@ pipeline {
         stage('Smoke Test') {
             steps {
                 sh '''
-                    sleep 5
-                    curl -f http://localhost:9090/health || (docker logs test-api && exit 1)
+                    sleep 10
+                    curl -f http://localhost:8080/health || (docker compose logs app1 --tail 100 && exit 1)
                 '''
             }
         }
@@ -40,7 +33,10 @@ pipeline {
 
     post {
         failure {
-            sh 'docker logs test-api || true'
+            sh 'docker compose logs app1 --tail 100 || true'
+        }
+        always {
+            sh 'rm -f .env || true'
         }
     }
 }
