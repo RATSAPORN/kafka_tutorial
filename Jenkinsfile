@@ -9,7 +9,7 @@ pipeline {
                         # Clean up any leftover standalone test container from before
                         docker stop test-api || true
                         docker rm test-api || true
-
+                        docker network inspect shared-network >/dev/null 2>&1 || docker network create shared-network
                         # Compose reads a literal ".env" file for variable substitution
                         cp "$ENV_FILE" .env
 
