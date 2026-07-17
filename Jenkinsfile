@@ -15,10 +15,10 @@ pipeline {
 
         stage('Build & Test (via Docker)') {
             steps {
-                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                sh 'docker build -f dockerfile.app1 -t my-go-app:${IMAGE_TAG} .'
             }
         }
-
+        
         stage('Tag as latest') {
             steps {
                 sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
