@@ -24,12 +24,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
-
 	"github.com/username/myproject/configs"
 	"github.com/username/myproject/controllers"
-	_ "github.com/username/myproject/docs" // blank import: registers generated swagger spec
+
 	"github.com/username/myproject/repositories"
 	"github.com/username/myproject/routes"
 	"github.com/username/myproject/schedulers"
@@ -96,7 +93,7 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	api := r.Group("/api/v1")
 	routes.MemberRegisterRoutes(api, memberController)
 	routes.PermissionRoutes(api, permissionController)
