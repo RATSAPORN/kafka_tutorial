@@ -1,0 +1,53 @@
+_format_version: "3.0"
+
+upstreams:
+  - name: app1-upstream
+    algorithm: round-robin
+    targets:
+      - target: app1-server:8080
+        weight: 100
+    healthchecks:
+      active:
+        type: http
+        http_path: /health
+        healthy:
+          interval: 5
+          successes: 2
+        unhealthy:
+          interval: 5
+          http_failures: 2
+
+services:
+  - name: create-member-service
+    host: app1-upstream
+    protocol: http
+    path: /api/v1/members
+
+    routes:
+      - name: create-member-route
+        paths:
+          - /api/v1/members
+        strip_path: true
+        methods:
+          - POST
+
+  - name: update-member-status-service
+    host: app1-upstream
+    protocol: http
+    path: /api/v1/members
+
+    routes:
+      - name: update-member-status-route
+        paths:
+          - /api/v1/members
+        strip_path: true
+        methods:
+          - GET
+
+    # plugins:
+    #   - name: permission_check
+    #     config:
+    #       permission_url: http://app1-server:8080/api/v1/permissions/
+    #       permission_timeout: 1000
+    #       public_paths:
+    #         - /api/v1/members/login

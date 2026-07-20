@@ -71,7 +71,7 @@ func main() {
 	// setup repos, producers, services
 	memberRepo := repositories.NewMemberRepository(db)
 	memberProducer := configs.NewMemberProducer(kafkaProducer)
-	tokenTTL := 15 * time.Minute
+	tokenTTL := 60 * time.Minute
 	memberService := services.NewMemberServiceWithAuth(memberRepo, memberProducer, db, signingKey, issuer, tokenTTL)
 	mailService := services.NewMailService()
 	authService := services.NewAuthService(signingKey, issuer)

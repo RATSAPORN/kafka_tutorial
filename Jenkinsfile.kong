@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Deploy Kong') {
+            steps {
+                sh '''
+                    docker network inspect shared-network >/dev/null 2>&1 || docker network create shared-network
+
+                    docker compose build kong
+                    docker compose up -d kong-database kong-migrations kong kong-config
+                '''
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                sh '''
+                    for i in $(seq 1 10); do
+                        curl -f http://localhost:8001/status && break
+                        echo "Waiting for Kong to be healthy... ($i/10)"
+                        sleep 3
+                    done
+                    curl -f http://localhost:8001/status || (docker compose logs kong --tail 100 && exit 1)
+                '''
+            }
+        }
+    }
+
+    post {
+        failure {
+            sh 'docker compose logs kong --tail 100 || true'
+        }
+    }
+}
