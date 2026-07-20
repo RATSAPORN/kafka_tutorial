@@ -26,6 +26,8 @@ pipeline {
                 withCredentials([file(credentialsId: 'app1-env-file', variable: 'ENV_FILE')]) {
                     sh '''
                         # Clean up any leftover standalone test container from before
+                        docker stop app1-server app1-server-2 2>/dev/null || true
+                        docker rm app1-server app1-server-2 2>/dev/null || true
                         docker stop test-api || true
                         docker rm test-api || true
                         docker network inspect shared-network >/dev/null 2>&1 || docker network create shared-network
