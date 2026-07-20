@@ -33,7 +33,11 @@ function PermissionCheck:access(conf)
     (_)
    <(o)>
     / \
-
+/////////---
+      _
+    (_)
+   <(o)>
+    / \
     ]])
     local auth_header = kong.request.get_header("Authorization")
     local headers = kong.request.get_headers()
