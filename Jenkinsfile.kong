@@ -10,10 +10,10 @@ pipeline {
                     docker compose rm -f kong kong-config kong-migrations || true
 
                     # Remove dangling images left over from previous builds
-                    docker image prune -f
+                    # docker image prune -f
 
                     # Remove old tagged kong-related images not currently in use
-                    docker images | grep -E "kong" | awk '{print $3}' | xargs -r docker rmi -f || true
+                    # docker images | grep -E "kong" | awk '{print $3}' | xargs -r docker rmi -f || true
                 '''
             }
         }
