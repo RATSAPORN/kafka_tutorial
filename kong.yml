@@ -44,10 +44,10 @@ services:
         methods:
           - GET
 
-    # plugins:
-    #   - name: permission_check
-    #     config:
-    #       permission_url: http://app1-server:8080/api/v1/permissions/
-    #       permission_timeout: 1000
-    #       public_paths:
-    #         - /api/v1/members/login
+    plugins:
+      - name: permission_check
+        config:
+          permission_url: http://app1-server:8080/api/v1/permissions/
+          permission_timeout: 1000
+          public_paths:
+            - /api/v1/members/login
