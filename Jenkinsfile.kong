@@ -1,19 +1,15 @@
 pipeline {
     agent any
 
-    environment {
-        GIT_SHA = ''
-    }
-
     stages {
         stage('Get Version') {
             steps {
                 script {
-                    env.GIT_SHA = sh(
+                    def gitSha = sh(
                         script: "git rev-parse --short=8 HEAD",
                         returnStdout: true
                     ).trim()
-                    env.KONG_VERSION = "${env.GIT_SHA}-${env.BUILD_NUMBER}"
+                    env.KONG_VERSION = "${gitSha}-${env.BUILD_NUMBER}"
                     echo "Building Kong image version: ${env.KONG_VERSION}"
                 }
             }
@@ -24,9 +20,6 @@ pipeline {
                 sh '''
                     docker compose stop kong kong-config kong-migrations || true
                     docker compose rm -f kong kong-config kong-migrations || true
-
-                    # docker image prune -f
-                    # docker images | grep -E "kong" | awk '{print $3}' | xargs -r docker rmi -f || true
                 '''
             }
         }
@@ -35,8 +28,6 @@ pipeline {
             steps {
                 sh '''
                     docker network inspect shared-network >/dev/null 2>&1 || docker network create shared-network
-
-                    export KONG_VERSION=${KONG_VERSION}
 
                     docker compose build kong
 
