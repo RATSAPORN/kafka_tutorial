@@ -2,6 +2,22 @@ pipeline {
     agent any
 
     stages {
+        stage('Cleanup old Kong images') {
+            steps {
+                sh '''
+                    # Stop/remove old kong containers if they exist (frees the image for removal)
+                    docker compose stop kong kong-config kong-migrations || true
+                    docker compose rm -f kong kong-config kong-migrations || true
+
+                    # Remove dangling images left over from previous builds
+                    docker image prune -f
+
+                    # Remove old tagged kong-related images not currently in use
+                    docker images | grep -E "kong" | awk '{print $3}' | xargs -r docker rmi -f || true
+                '''
+            }
+        }
+
         stage('Deploy Kong') {
             steps {
                 sh '''
