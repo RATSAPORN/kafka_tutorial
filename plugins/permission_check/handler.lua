@@ -27,7 +27,14 @@ function PermissionCheck:access(conf)
         kong.log.notice("[permission_check] Public path, skipping permission check: ", request_path)
         return
     end
-    kong.log.notice("Updated Hello")
+    kong.log.notice([[
+
+     _
+    (_)
+   <(o)>
+    / \
+
+    ]])
     local auth_header = kong.request.get_header("Authorization")
     local headers = kong.request.get_headers()
     kong.log.notice("[permission_check] All request headers = ", require("cjson.safe").encode(headers))
