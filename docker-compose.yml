@@ -97,6 +97,9 @@ services:
     restart: on-failure
 
   kong:
+    build:
+      context: .
+      dockerfile: dockerfile.kong
     image: kong_main-kong:${KONG_VERSION:-latest}
     restart: unless-stopped
     ports:
