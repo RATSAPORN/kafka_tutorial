@@ -1,7 +1,26 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout()
+    }
+
     stages {
+        stage('Fix workspace permissions') {
+            steps {
+                sh '''
+                    docker run --rm -v "$WORKSPACE":/workspace alpine \
+                        chown -R $(id -u):$(id -g) /workspace || true
+                '''
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Deploy') {
             steps {
                 withCredentials([file(credentialsId: 'app1-env-file', variable: 'ENV_FILE')]) {
@@ -19,6 +38,7 @@ pipeline {
                         wc -l .env
                         grep -c "=" .env || echo "WARNING: no key=value lines found"
                         cut -d= -f1 .env
+                        docker compose config
 
                         # Build and (re)start just the app1 service
                         docker compose build app1
@@ -31,7 +51,11 @@ pipeline {
         stage('Smoke Test') {
             steps {
                 sh '''
-                    sleep 10
+                    for i in $(seq 1 10); do
+                        curl -f http://localhost:9090/health && break
+                        echo "Waiting for app1 to be healthy... ($i/10)"
+                        sleep 3
+                    done
                     curl -f http://localhost:9090/health || (docker compose logs app1 --tail 100 && exit 1)
                 '''
             }
